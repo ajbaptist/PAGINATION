@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+
 import 'package:pagination/model.dart';
-import 'package:pull_to_refresh/pull_to_refresh.dart';
+
+List<Temperatures> list = [];
 
 void main() {
   runApp(MyApp());
@@ -28,70 +30,41 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  int pageNumber = 0;
-  int totalPage = 1;
-  List<Datum> list = [];
-  var refreshController = RefreshController();
-  Future<bool> getData() async {
-    if (pageNumber >= totalPage) {
-      refreshController.loadComplete();
-      return true;
-    }
-
-    String url =
-        'https://api.instantwebtools.net/v1/passenger?page=$pageNumber&size=10#';
-    http.Response response = await http.get(Uri.parse(url));
-    if (response.statusCode == 200) {
-      setState(() {
-        final jsondata = welcomeFromJson(response.body);
-        list = jsondata.data;
-        totalPage = jsondata.totalPages;
-        pageNumber++;
-        print(pageNumber);
-        print(totalPage);
-      });
-      return true;
-    } else {
-      return false;
-    }
-  }
-
   @override
   void initState() {
     getData();
+
     super.initState();
+  }
+
+  Future getData() async {
+    String url = 'https://jsonplaceholder.typicode.com/todos';
+    http.Response response = await http.get(Uri.parse(url));
+    if (response.statusCode == 200) {
+      final jsondata = temperaturesFromJson(response.body);
+
+      list = jsondata;
+      setState(() {});
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        centerTitle: true,
-        title: Text('PAGINATION'),
-      ),
-      body: list.isEmpty
-          ? Center(child: CircularProgressIndicator())
-          : SmartRefresher(
-              controller: refreshController,
-              enablePullUp: true,
-              onLoading: () async {
-                final result = await getData();
-                if (result) {
-                  refreshController.loadComplete();
-                } else {
-                  refreshController.loadFailed();
-                }
-              },
-              child: ListView.separated(
-                  itemBuilder: (context, index) {
-                    final _list = list[index];
-                    return ListTile(
-                      title: Text(_list.name),
-                    );
-                  },
-                  separatorBuilder: (context, index) => Divider(),
-                  itemCount: list.length),
-            ),
-    );
+        appBar: AppBar(
+          centerTitle: true,
+          title: Text('PAGINATION'),
+        ),
+        body: list.isEmpty
+            ? Center(child: CircularProgressIndicator())
+            : ListView.separated(
+                itemBuilder: (context, index) {
+                  final _list = list[index];
+                  return ListTile(
+                    title: Text(_list.title),
+                  );
+                },
+                separatorBuilder: (context, index) => Divider(),
+                itemCount: list.length));
   }
 }
